@@ -53,6 +53,7 @@
 #' using all variables to the left of the variable being imputed as covariates
 #' @param missingDataCheck TRUE/FALSE indicating whether `gFormulaMI` checks, when
 #' passed a regular data frame, whether there any missing values.
+#' @param ... Optional additional arguments to pass to mice
 #'
 #' @returns an S3 object of class mids (multiply imputed dataset)
 #'
@@ -81,7 +82,7 @@
 gFormulaImpute <- function(data, M=50, trtVars, trtRegimes,
                            nSim=NULL, micePrintFlag=FALSE,silent=FALSE,
                            method=NULL,predictorMatrix=NULL,
-                           missingDataCheck=TRUE) {
+                           missingDataCheck=TRUE, ...) {
 
   if (inherits(data, "mids")) {
     missingData <- TRUE
@@ -205,7 +206,7 @@ gFormulaImpute <- function(data, M=50, trtVars, trtRegimes,
     imps <- mice::mice(data=inputData,
                method=method,
                predictorMatrix = predictorMatrix,m=M,maxit=1,
-               printFlag = micePrintFlag)
+               printFlag = micePrintFlag, ...)
 
     if (silent==FALSE) {
       print("Variables imputed using:")
@@ -255,7 +256,7 @@ gFormulaImpute <- function(data, M=50, trtVars, trtRegimes,
       imps <- mice::mice(data=inputData,
                    method=method,
                    predictorMatrix = predictorMatrix,m=1,maxit=1,
-                   printFlag = micePrintFlag)
+                   printFlag = micePrintFlag, ...)
 
       if (i==1) {
         if (silent==FALSE) {
