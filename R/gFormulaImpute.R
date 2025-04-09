@@ -84,29 +84,25 @@ gFormulaImpute <- function(data, M=50, trtVars, trtRegimes,
                            method=NULL,predictorMatrix=NULL,
                            missingDataCheck=TRUE, ...) {
 
-  if (inherits(data, "mids")) {
-    missingData <- TRUE
-    if (silent==FALSE) {
+  missingData <- inherits(data, "mids")
+
+  if (missingData) {
+    if (!silent) {
       print("Input data is a mice created multiple imputation object.")
     }
-    if (data$m!=M) {
-      if (silent==FALSE) {
+    if (data$m != M && !silent) {
         print("Value passed to M being ignored.")
         print(paste("Number of synthetic imputations to be generated set to",data$m, "as in mids object passed to gFormulaImpute."))
-      }
     }
     M <- data$m
     firstImp <- mice::complete(data,1)
   } else if (inherits(data,"data.frame"))  {
-    missingData <- FALSE
-    if (silent==FALSE) {
+    if (!silent) {
       print("Input data is a regular data frame.")
     }
     #check there are no missing values, unless user has turned off this check
-    if (missingDataCheck==TRUE) {
-      if (sum(is.na(data))>0) {
+    if (missingDataCheck && anyNA(data)) {
         stop("Missing values detected - please multiply impute these and pass a mids type object as input.")
-      }
     }
   } else {
     stop("Input dataset should either be a data frame or a mids object created by mice.")
@@ -131,7 +127,7 @@ gFormulaImpute <- function(data, M=50, trtVars, trtRegimes,
   }
 
   #check treatment variables are in data frame
-  if (missingData==FALSE) {
+  if (!missingData) {
     dataVars <- colnames(data)
   } else {
     dataVars <- colnames(firstImp)
@@ -140,18 +136,16 @@ gFormulaImpute <- function(data, M=50, trtVars, trtRegimes,
     stop("Some of the treatment variables you specified are not in the data frame.")
   }
 
-  if (missingData==TRUE) {
+  if (missingData) {
     n <- nrow(firstImp)
   } else {
     n <- nrow(data)
   }
 
-  if (is.null(nSim)) {
-    nSim <- n
-  }
+  nSim <- ifelse(is.null(nSim), n, nSim)
 
   #create blank dataset with treatment indicators set as per desired regime
-  if (missingData==TRUE) {
+  if (missingData) {
     syntheticDataBlank <- data.frame(matrix(NA,nrow=nSim*numRegimes,
                                             ncol=ncol(firstImp)))
     colnames(syntheticDataBlank) <- colnames(firstImp)
@@ -183,7 +177,7 @@ gFormulaImpute <- function(data, M=50, trtVars, trtRegimes,
   predMat <- mice::make.predictorMatrix(syntheticDataBlank)
   predMat[,] <- 1*(lower.tri(predMat))
 
-  if (missingData==FALSE) {
+  if (!missingData) {
     data$regime <- as.factor(0)
     inputData <- rbind(data,syntheticDataBlank)
 
@@ -208,7 +202,7 @@ gFormulaImpute <- function(data, M=50, trtVars, trtRegimes,
                predictorMatrix = predictorMatrix,m=M,maxit=1,
                printFlag = micePrintFlag, ...)
 
-    if (silent==FALSE) {
+    if (!silent) {
       print("Variables imputed using:")
       print(imps$method)
       print("Predictor matrix is set to:")
@@ -258,13 +252,11 @@ gFormulaImpute <- function(data, M=50, trtVars, trtRegimes,
                    predictorMatrix = predictorMatrix,m=1,maxit=1,
                    printFlag = micePrintFlag, ...)
 
-      if (i==1) {
-        if (silent==FALSE) {
+      if (i==1 && !silent) {
           print("Variables imputed using:")
           print(imps$method)
           print("Predictor matrix is set to:")
           print(imps$predictorMatrix)
-        }
       }
 
       #prepare single imputation for copying to imputeDatasetsLong
