@@ -104,6 +104,7 @@ gFormulaImpute <- function(data, M=50, trtVars, trtRegimes,
     if (missingDataCheck && anyNA(data)) {
         stop("Missing values detected - please multiply impute these and pass a mids type object as input.")
     }
+    firstImp <- data
   } else {
     stop("Input dataset should either be a data frame or a mids object created by mice.")
   }
@@ -127,32 +128,17 @@ gFormulaImpute <- function(data, M=50, trtVars, trtRegimes,
   }
 
   #check treatment variables are in data frame
-  if (!missingData) {
-    dataVars <- colnames(data)
-  } else {
-    dataVars <- colnames(firstImp)
-  }
-  if (all(trtVars %in% dataVars)==FALSE) {
+  if (!all(trtVars %in% colnames(firstImp))) {
     stop("Some of the treatment variables you specified are not in the data frame.")
   }
 
-  if (missingData) {
-    n <- nrow(firstImp)
-  } else {
-    n <- nrow(data)
-  }
-
+  n <- nrow(firstImp)
   nSim <- ifelse(is.null(nSim), n, nSim)
 
   #create blank dataset with treatment indicators set as per desired regime
-  if (missingData) {
-    syntheticDataBlank <- data.frame(matrix(NA,nrow=nSim*numRegimes,
-                                            ncol=ncol(firstImp)))
-    colnames(syntheticDataBlank) <- colnames(firstImp)
-  } else {
-    syntheticDataBlank <- data.frame(matrix(NA,nrow=nSim*numRegimes,ncol=ncol(data)))
-    colnames(syntheticDataBlank) <- colnames(data)
-  }
+  syntheticDataBlank <- data.frame(matrix(NA,nrow=nSim*numRegimes,
+                                          ncol=ncol(firstImp)))
+  colnames(syntheticDataBlank) <- colnames(firstImp)
 
   #create new variable which in the end will indicate which treatment regime
   #the row corresponds to
@@ -178,8 +164,8 @@ gFormulaImpute <- function(data, M=50, trtVars, trtRegimes,
   predMat[,] <- 1*(lower.tri(predMat))
 
   if (!missingData) {
-    data$regime <- as.factor(0)
-    inputData <- rbind(data,syntheticDataBlank)
+    firstImp$regime <- as.factor(0)
+    inputData <- rbind(firstImp,syntheticDataBlank)
 
     if (is.null(method)) {
       method <- mice::make.method(data=inputData,defaultMethod = c("norm", "logreg", "polyreg","polr"))
