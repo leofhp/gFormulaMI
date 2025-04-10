@@ -125,6 +125,7 @@ gFormulaImpute <- function(data, M=50, trtVars, trtRegimes,
     if (length(trtRegimes)!=timePoints) {
       stop("Length of treatment regime does not match number of treatment variables.")
     }
+    trtRegimes <- list(trtRegimes)
   }
 
   #check treatment variables are in data frame
@@ -136,27 +137,16 @@ gFormulaImpute <- function(data, M=50, trtVars, trtRegimes,
   nSim <- ifelse(is.null(nSim), n, nSim)
 
   #create blank dataset with treatment indicators set as per desired regime
-  syntheticDataBlank <- data.frame(matrix(NA,nrow=nSim*numRegimes,
-                                          ncol=ncol(firstImp)))
-  colnames(syntheticDataBlank) <- colnames(firstImp)
+  syntheticDataBlank <- firstImp[rep(1, nSim * numRegimes), ]
+  syntheticDataBlank[, ] <- NA
 
   #create new variable which in the end will indicate which treatment regime
   #the row corresponds to
-  syntheticDataBlank$regime <- as.factor(0)
+  syntheticDataBlank$regime <- factor(rep(1:numRegimes, each = nSim))
 
-  if (numRegimes==1) {
-    syntheticDataBlank$regime <- as.factor(1)
-    for (i in 1:timePoints) {
-      #set treatment indicator according to specified regime
-      syntheticDataBlank[1:n,trtVars[i]] <- trtRegimes[i]
-    }
-  } else {
-    syntheticDataBlank$regime <- as.factor(rep(1:numRegimes,each=nSim))
-    for (j in 1:numRegimes) {
-      for (i in 1:timePoints) {
-        syntheticDataBlank[((j-1)*nSim+1):(j*nSim), trtVars[i]] <- trtRegimes[[j]][i]
-      }
-    }
+  for (j in seq_len(numRegimes)) {
+    rows <- ((j - 1) * nSim + 1):(j * nSim)
+    syntheticDataBlank[rows, trtVars] <- rep(trtRegimes[[j]], each = nSim)
   }
 
   #set up predictor matrix for mice, exploiting monotone pattern
