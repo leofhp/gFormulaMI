@@ -13,7 +13,9 @@ gFormulaImpute(
   micePrintFlag = FALSE,
   silent = FALSE,
   method = NULL,
-  predictorMatrix = NULL
+  predictorMatrix = NULL,
+  missingDataCheck = TRUE,
+  ...
 )
 }
 \arguments{
@@ -42,6 +44,11 @@ proportional odds model for ordered factors}
 \item{predictorMatrix}{An optional predictor matrix to specify which variables to use
 as predictors in the imputation models. The default is to impute sequentially, i.e. impute
 using all variables to the left of the variable being imputed as covariates}
+
+\item{missingDataCheck}{TRUE/FALSE indicating whether \code{gFormulaMI} checks, when
+passed a regular data frame, whether there any missing values.}
+
+\item{...}{Optional additional arguments to pass to mice}
 }
 \value{
 an S3 object of class mids (multiply imputed dataset)
