@@ -162,26 +162,29 @@ gFormulaImpute <- function(data, M=50, trtVars, trtRegimes,
   #set up predictor matrix for mice, exploiting monotone pattern
   predMat <- mice::make.predictorMatrix(syntheticDataBlank)
   predMat[,] <- 1*(lower.tri(predMat))
+  if (!is.null(predictorMatrix)) {
+    #need to append user provided predictor matrix with extra row and column
+    #corresponding to new variable regime
+    predMat[seq_len(nrow(predictorMatrix)), seq_len(ncol(predictorMatrix))] <-
+      predictorMatrix
+  }
+  predictorMatrix <- predMat
+
+  # set up method for mice
+  if (is.null(method)) {
+    method <- mice::make.method(data = rbind(transform(firstImp,
+                                                       regime = factor(0)),
+                                             syntheticDataBlank),
+                                defaultMethod = c("norm", "logreg", "polyreg",
+                                                  "polr"))
+  } else {
+    #add on an empty imputation method for the new variable regime
+    method <- c(method, "")
+  }
 
   if (!missingData) {
     firstImp$regime <- as.factor(0)
     inputData <- rbind(firstImp,syntheticDataBlank)
-
-    if (is.null(method)) {
-      method <- mice::make.method(data=inputData,defaultMethod = c("norm", "logreg", "polyreg","polr"))
-    } else {
-      #add on an empty imputation method for the new variable regime
-      method <- c(method,"")
-    }
-
-    if (is.null(predictorMatrix)) {
-      predictorMatrix <- predMat
-    } else {
-      #need to append user provided predictor matrix with extra row and column
-      #corresponding to new variable regime
-      predMat[1:nrow(predictorMatrix),1:ncol(predictorMatrix)] <- predictorMatrix
-      predictorMatrix <- predMat
-    }
 
     imps <- mice::mice(data=inputData,
                method=method,
@@ -215,23 +218,6 @@ gFormulaImpute <- function(data, M=50, trtVars, trtRegimes,
       inputData <- mice::complete(data, action=i)
       inputData$regime <- as.factor(0)
       inputData <- rbind(inputData,syntheticDataBlank)
-
-      if (i==1) {
-        if (is.null(method)) {
-          method <- mice::make.method(data=inputData,defaultMethod = c("norm", "logreg", "polyreg","polr"))
-        } else {
-          #add on an empty imputation method for the new variable regime
-          method <- c(method,"")
-        }
-        if (is.null(predictorMatrix)) {
-          predictorMatrix <- predMat
-        } else {
-          #need to append user provided predictor matrix with extra row and column
-          #corresponding to new variable regime
-          predMat[1:nrow(predictorMatrix),1:ncol(predictorMatrix)] <- predictorMatrix
-          predictorMatrix <- predMat
-        }
-      }
 
       imps <- mice::mice(data=inputData,
                    method=method,
