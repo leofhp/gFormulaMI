@@ -132,7 +132,6 @@ gFormulaImpute <- function(data, M=50, trtVars, trtRegimes,
   if (!all(trtVars %in% colnames(firstImp))) {
     stop("Some of the treatment variables you specified are not in the data frame.")
   }
-
   n <- nrow(firstImp)
   nSim <- ifelse(is.null(nSim), n, nSim)
 
@@ -158,7 +157,6 @@ gFormulaImpute <- function(data, M=50, trtVars, trtRegimes,
     predMat[seq_len(nrow(predictorMatrix)), seq_len(ncol(predictorMatrix))] <-
       predictorMatrix
   }
-  predictorMatrix <- predMat
 
   # set up method for mice
   if (is.null(method)) {
@@ -178,7 +176,7 @@ gFormulaImpute <- function(data, M=50, trtVars, trtRegimes,
 
     imps <- mice::mice(data=inputData,
                method=method,
-               predictorMatrix = predictorMatrix,m=M,maxit=1,
+               predictorMatrix = predMat,m=M,maxit=1,
                printFlag = micePrintFlag, ...)
 
     if (!silent) {
@@ -211,7 +209,7 @@ gFormulaImpute <- function(data, M=50, trtVars, trtRegimes,
 
       imps <- mice::mice(data=inputData,
                    method=method,
-                   predictorMatrix = predictorMatrix,m=1,maxit=1,
+                   predictorMatrix = predMat,m=1,maxit=1,
                    printFlag = micePrintFlag, ...)
 
       if (i==1 && !silent) {
@@ -227,7 +225,8 @@ gFormulaImpute <- function(data, M=50, trtVars, trtRegimes,
       imputedDataset <- imputedDataset[imputedDataset$regime!=0,]
       imputedDataset$regime <- droplevels(imputedDataset$regime)
       #copy single imputation into long dataframe
-      imputedDatasetsLong[((i-1)*(nSim*numRegimes)+1):(i*(nSim*numRegimes)),1:ncol(inputData)] <- imputedDataset
+      imputedDatasetsLong[((i-1)*(nSim*numRegimes)+1):(i*(nSim*numRegimes)), seq_len(ncol(inputData))] <-
+        imputedDataset
     }
 
     #put 'original' data at top
@@ -240,8 +239,5 @@ gFormulaImpute <- function(data, M=50, trtVars, trtRegimes,
     returnImps$method <- imps$method
   }
   #return the imputations
-  returnImps
-
-
+  return(returnImps)
 }
-
